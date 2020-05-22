@@ -25,15 +25,19 @@ int main(int argc,char *argv[])
     radio.startListening();
     radio.printDetails();
 
+    bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_OUTP);
+
     while(1){
         uint8_t pipeNo, payload[20]="";
 
-        while(radio.available(&pipeNo)) {         
+        while(radio.available(&pipeNo)) {   
+            bcm2835_gpio_set(20);
             radio.read(payload, 5); 
             cout<<payload;
             printf(" %d",pipeNo);
-            sprintf(str,"curl 'http://134.208.6.62/setData.php?data=%s&code=DCLAB&gateway=%s&pipe=%d'",payload,argv[1],pipeNo);
+            sprintf(str,"curl 'http://134.208.6.62/exec/setData.php?data=%s&code=DCLAB&gateway=%s&pipe=%d'",payload,argv[1],pipeNo);
             cout<<" send: "<<str<<" result: "<<system(str)<<endl;
+            bcm2835_gpio_clr(20);    
         }
     }
 }

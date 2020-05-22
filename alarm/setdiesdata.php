@@ -6,11 +6,11 @@ while(1) {
 
 function alarm()
 {
-    system("gpio -g mode 26 out");
+    system("gpio -g mode 21 out");
     for ($i=0; $i<3; $i++) {
-        system("gpio -g write 26 1");
+        system("gpio -g write 21 1");
         usleep(500000);
-        system("gpio -g write 26 0");
+        system("gpio -g write 21 0");
         usleep(500000);
     }
 }
