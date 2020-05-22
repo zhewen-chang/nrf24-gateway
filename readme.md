@@ -11,7 +11,7 @@
 - startgateway.sh
 ```shell
 #!/bin/bash 
-php /var/www/html/setdiesdata.php
+php /location/to/setdiesdata.php
 ```
 
 - crontab
