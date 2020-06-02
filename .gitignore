@@ -25,3 +25,4 @@ gateway/*
 .directory
 .idea
 alarm/config.json
+gateway/dataServer_config.h
