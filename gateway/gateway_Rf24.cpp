@@ -5,14 +5,16 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <RF24/RF24.h>
+#include "gateway_RF24.h"
+#include "dataServer.h"
 
 using namespace std;
 
 RF24 radio(RPI_V2_GPIO_P1_15, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_8MHZ);
+Server data(GATEWAY_NUMBER);
 
 int main(int argc,char *argv[])
 {
-    char str[1024];
     radio.begin();
     radio.enableDynamicPayloads();
     radio.setPALevel(4);
@@ -22,6 +24,7 @@ int main(int argc,char *argv[])
     radio.openReadingPipe(3, (uint8_t*)"3");
     radio.openReadingPipe(4, (uint8_t*)"4");
     radio.openReadingPipe(5, (uint8_t*)"5");
+    radio.openWritingPipe((uint8_t*)"gaway");
     radio.startListening();
     radio.printDetails();
 
@@ -33,10 +36,30 @@ int main(int argc,char *argv[])
         while(radio.available(&pipeNo)) {   
             bcm2835_gpio_set(20);
             radio.read(payload, 5); 
-            cout<<payload;
-            printf(" %d",pipeNo);
-            sprintf(str,"curl 'http://134.208.6.62/exec/setData.php?data=%s&code=DCLAB&gateway=%s&pipe=%d'",payload,argv[1],pipeNo);
-            cout<<" send: "<<str<<" result: "<<system(str)<<endl;
+            cout << payload<<endl;
+
+            if(!strcmp((char*)payload,"RGS")){
+                radio.stopListening();
+                // getid
+                int id=data.getId();
+                cout<<id<<endl;
+                int pipe=data.getpipe();
+                char ids[10];
+                sprintf(ids,"%03d|%01d",id,pipe);
+                cout<<ids<<endl;
+                radio.write(ids,6);
+                //reg
+                if (!data.regist(id,"Low",pipe))
+                    cout<< "Reg failed" <<endl;
+                    
+                radio.startListening();
+                bcm2835_gpio_clr(20);    
+                continue;
+            }
+            
+            if (!data.log((char *)payload, pipeNo))
+                cout<< "Log failed" <<endl;
+
             bcm2835_gpio_clr(20);    
         }
     }

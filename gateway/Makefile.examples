@@ -13,6 +13,7 @@
 
 BINARY_PREFIX = rf24
 SOURCES = $(PROGRAMS:=.cpp)
+SERVERSRC = $(SERVER:=.cpp)
 
 LIBS=-l$(LIB)
 ifeq ($(DRIVER), LittleWire)
@@ -21,8 +22,8 @@ endif
 
 all: $(PROGRAMS)
 
-$(PROGRAMS): $(SOURCES)
-	$(CXX) $(CFLAGS) -I$(HEADER_DIR)/.. -I.. -L$(LIB_DIR) $@.cpp $(LIBS) -o $@
+$(PROGRAMS): $(SOURCES) $(SERVERSRC)
+	$(CXX) $(SERVERSRC) -marm -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -Ofast -Wall -pthread -I$(HEADER_DIR)/.. -I.. -L$(LIB_DIR) -lmysqlclient $@.cpp $(LIBS) -o $@
 
 clean:
 	@echo "[Cleaning]"
