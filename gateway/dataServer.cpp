@@ -33,7 +33,7 @@ bool Server::log(int id, char *level, char *sign, int pipe)
     strftime(times, 100, "%Y-%m-%d %H:%M:%S", info);
     init();
     connect();
-    sprintf(sql, "INSERT INTO `log`(`id`, `level`, `time`, `sign`, `near_gateway`, `pipe`) VALUES (%d, '%s', '%s', '%s',%d,%d)",id,level,times,sign,gateway_number,pipe);
+    sprintf(sql, "INSERT ignore INTO `log`(`id`, `level`, `time`, `sign`, `near_gateway`, `pipe`) VALUES (%d, '%s', '%s', '%s',%d,%d)",id,level,times,sign,gateway_number,pipe);
     int res = mysql_query(conn,sql);
     close();
 
@@ -52,6 +52,10 @@ bool Server::log(char *payload,int pipe)
     char ids[4];
     int id;
 
+    strncpy(ids,dp+1,3);
+    ids[3]='\0';
+    id=atoi(ids);
+
     if(dp[0]=='L')
         strcpy(level,"LOW");
     else if(dp[0]=='M')
@@ -66,8 +70,10 @@ bool Server::log(char *payload,int pipe)
         strcpy(sign,"Alive");
     else if(dp[4]=='W')
         strcpy(sign,"Wakeup");
-    else if(dp[4]=='S')
+    else if(dp[4]=='S'){
         strcpy(sign,"Sleep");
+        deregist(id);
+    }
     else {
         return false;
     }
@@ -175,4 +181,16 @@ bool Server::regist(int id,char *level, int pipe)
     close();
 
     return !res;
+}
+
+bool Server::deregist(int id)
+{
+    char sql[128];
+    init(); 
+    connect();
+    sprintf (sql, "DELETE FROM `customer` WHERE `id`=%d",id);
+    int res = mysql_query(conn,sql);
+    close();
+    return !res;
+    
 }

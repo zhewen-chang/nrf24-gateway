@@ -20,6 +20,7 @@ private:
     int gateway_number;
     bool connect(void);
     void close(void);
+    bool deregist(int id);
 };
 
 #endif
