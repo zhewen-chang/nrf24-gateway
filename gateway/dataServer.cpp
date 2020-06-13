@@ -185,6 +185,8 @@ bool Server::regist(int id,char *level, int pipe)
 
 bool Server::deregist(int id)
 {
+    if(gateway_number!=1)
+        return false;
     char sql[128];
     init(); 
     connect();
@@ -194,3 +196,4 @@ bool Server::deregist(int id)
     return !res;
     
 }
+

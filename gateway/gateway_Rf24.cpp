@@ -29,7 +29,8 @@ int main(int argc,char *argv[])
     radio.printDetails();
 
     bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_OUTP);
-
+    bcm2835_gpio_clr(20);    
+    
     while(1){
         uint8_t pipeNo, payload[20]="";
 
@@ -42,7 +43,6 @@ int main(int argc,char *argv[])
                 radio.stopListening();
                 // getid
                 int id=data.getId();
-                cout<<id<<endl;
                 int pipe=data.getpipe();
                 char ids[10];
                 sprintf(ids,"%03d|%01d",id,pipe);
