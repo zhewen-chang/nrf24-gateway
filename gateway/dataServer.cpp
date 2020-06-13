@@ -78,11 +78,7 @@ bool Server::log(char *payload,int pipe)
         return false;
     }
 
-    strncpy(ids,dp+1,3);
-    ids[3]='\0';
-    id=atoi(ids);
     return log(id,level,sign,pipe);
-
 }
 
 bool Server::connect(void)
