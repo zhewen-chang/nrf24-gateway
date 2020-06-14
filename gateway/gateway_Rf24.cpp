@@ -47,12 +47,12 @@ int main(int argc,char *argv[])
                 // getid
                 int id=data.getId();
                 char ids[10];
-                sprintf(ids,"%03d|%01d",id);
+                sprintf(ids,"%03d|%01d",id, id%6);
                 
                 radio.write(ids,6);
 
                 //reg
-                if (!data.regist(id,"Low",pipe)) {
+                if (!data.regist(id,"Low")) {
                     cout<< "Reg failed" <<endl;
                 }
                     
