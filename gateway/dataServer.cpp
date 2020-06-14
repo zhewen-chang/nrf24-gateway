@@ -44,7 +44,7 @@ bool Server::log(int id, char *level, char *sign, int pipe)
     return false;
 }
 
-bool Server::log(char *payload,int pipe)
+int Server::log(char *payload,int pipe)
 {
     char *dp = strdup(payload);
     char level[5];
@@ -56,25 +56,29 @@ bool Server::log(char *payload,int pipe)
     ids[3]='\0';
     id=atoi(ids);
 
-    if(dp[0]=='L')
+    if(dp[0]=='L') {
         strcpy(level,"LOW");
-    else if(dp[0]=='M')
+    } else if(dp[0]=='M') {
         strcpy(level,"MID");
-    else if(dp[0]=='H')
+    } else if(dp[0]=='H') {
         strcpy(level,"HIGH");
-    else {
+    } else {
         return false;
     }
     
-    if(dp[4]=='A')
+    if(dp[4]=='A') {
         strcpy(sign,"Alive");
-    else if(dp[4]=='W')
+    } else if(dp[4]=='W') {
         strcpy(sign,"Wakeup");
-    else if(dp[4]=='S'){
+    } else if(dp[4]=='S'){
         strcpy(sign,"Sleep");
-        deregist(id);
-    }
-    else {
+        if(deregist(id)==true){
+            return 5;
+        }
+        else{
+            return 6;
+        }
+    } else {
         return false;
     }
 
@@ -164,14 +168,14 @@ int Server::getpipe(void)
     return max;
 }
 
-bool Server::regist(int id,char *level, int pipe)
+bool Server::regist(int id,char *level)
 {
     char sql[128]; 
 
     init();
     connect();
 
-    sprintf (sql, "INSERT INTO `customer`(`id`, `level`, `pipe`) VALUES (%d, '%s', %d)", id, level, pipe);
+    sprintf (sql, "INSERT INTO `customer`(`id`, `level`, `pipe`) VALUES (%d, '%s', %d)", id, level, id%6);
     int res = mysql_query(conn,sql);
 
     close();
@@ -181,15 +185,20 @@ bool Server::regist(int id,char *level, int pipe)
 
 bool Server::deregist(int id)
 {
-    if(gateway_number!=1)
+    if(gateway_number!=1){
         return false;
+    }
+
     char sql[128];
+
     init(); 
     connect();
+
     sprintf (sql, "DELETE FROM `customer` WHERE `id`=%d",id);
     int res = mysql_query(conn,sql);
+
     close();
+
     return !res;
-    
 }
 

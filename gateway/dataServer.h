@@ -8,16 +8,17 @@ public:
     Server(int gateway_number);
 
     bool init(void);
-    bool log(char *payload,int pipe);
+    int log(char *payload,int pipe);
     bool log(int id, char *level, char *sign, int pipe);
     int getId(void);
     int getpipe(void);
-    bool regist(int id,char *level,int pipe);
+    bool regist(int id,char *level);
     
 
 private:
     MYSQL *conn;
     int gateway_number;
+
     bool connect(void);
     void close(void);
     bool deregist(int id);

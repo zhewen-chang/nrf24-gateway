@@ -22,6 +22,7 @@ utility/includes.h
 gateway/*
 !gateway/**/
 !gateway/*.*
+!gateway/Makefile
 .directory
 .idea
 alarm/config.json
