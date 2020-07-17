@@ -1,1 +1,1 @@
-#define GATEWAY_NUMBER 2
+#define GATEWAY_NUMBER 1

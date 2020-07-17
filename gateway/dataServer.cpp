@@ -4,6 +4,12 @@
 #include "dataServer.h"
 #include "dataServer_config.h"
 #include <string.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <netinet/in.h> 
+#include <string.h> 
+#include <arpa/inet.h>
+
 
 bool Server::init(void)
 {    
@@ -21,9 +27,63 @@ Server::Server(int _gateway_number)
         :gateway_number(_gateway_number)
 {
     conn = NULL;
+    getIP();
+    gateway_regist();
 }
 
-bool Server::log(int id, char *level, char *sign, int pipe)
+void Server::getIP(void)
+{
+    struct ifaddrs * ifAddrStruct=NULL;
+    struct ifaddrs * ifa=NULL;
+    void * tmpAddrPtr=NULL;  
+
+    getifaddrs(&ifAddrStruct);
+
+    for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa ->ifa_addr->sa_family==AF_INET) { // check it is IP4
+            // is a valid IP4 Address
+            tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            char addressBuffer[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+            strcpy(IP, addressBuffer);
+         } else if (ifa->ifa_addr->sa_family==AF_INET6) { // check it is IP6
+            // is a valid IP6 Address
+            tmpAddrPtr=&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
+            char addressBuffer[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, tmpAddrPtr, addressBuffer, INET6_ADDRSTRLEN);
+        } 
+    }
+
+    if (ifAddrStruct!=NULL) 
+        freeifaddrs(ifAddrStruct);//remember to free ifAddrStruct
+}
+
+bool Server::check_counter(void)
+{
+    MYSQL_RES *res_ptr; 
+    MYSQL_ROW result_row; 
+
+    char sql[128];
+    sprintf(sql,"SELECT `counter` FROM `gateway` where ip='%s'",IP);
+    int res = mysql_query(conn,sql);
+   
+
+    if (!res) {
+        res_ptr = mysql_store_result(conn);
+        
+        if (res_ptr) {
+            int row = mysql_num_rows(res_ptr);
+            if (row) {     
+                result_row = mysql_fetch_row(res_ptr);
+                return result_row[0];     
+            } 
+        } 
+    }
+    return false;
+
+}
+
+bool Server::log(int id, char *sign)
 {
     char sql[256], times[100]; 
     time_t rawtime;
@@ -33,9 +93,15 @@ bool Server::log(int id, char *level, char *sign, int pipe)
     strftime(times, 100, "%Y-%m-%d %H:%M:%S", info);
     init();
     connect();
-    sprintf(sql, "INSERT ignore INTO `log`(`id`, `level`, `time`, `sign`, `near_gateway`, `pipe`) VALUES (%d, '%s', '%s', '%s',%d,%d)",id,level,times,sign,gateway_number,pipe);
+    sprintf(sql, "INSERT ignore INTO `log`(`id`, `time`, `sign`, `near_gateway`) VALUES (%d, '%s', '%s', '%s')",id,times,sign,IP);
     int res = mysql_query(conn,sql);
+    if(check_counter()==false){
+        sprintf(sql, "UPDATE `customer` SET `counter`=false WHERE id=%d",id);
+        res = mysql_query(conn,sql);
+     }
+
     close();
+
 
     if (!res) {
         return true;
@@ -43,8 +109,8 @@ bool Server::log(int id, char *level, char *sign, int pipe)
 
     return false;
 }
-
-int Server::log(char *payload,int pipe)
+/*analysis payload*/
+int Server::log(char *payload)
 {
     char *dp = strdup(payload);
     char level[5];
@@ -82,7 +148,7 @@ int Server::log(char *payload,int pipe)
         return false;
     }
 
-    return log(id,level,sign,pipe);
+    return log(id,sign);
 }
 
 bool Server::connect(void)
@@ -168,14 +234,17 @@ int Server::getpipe(void)
     return max;
 }
 
-bool Server::regist(int id,char *level)
+bool Server::regist(int id)
 {
+   if(check_counter()==false){
+        return false;
+    }
     char sql[128]; 
 
     init();
     connect();
 
-    sprintf (sql, "INSERT INTO `customer`(`id`, `level`, `pipe`) VALUES (%d, '%s', %d)", id, level, id%6);
+    sprintf (sql, "INSERT INTO `customer`(`id`, `pipe`) VALUES (%d, %d)", id,  id%6);
     int res = mysql_query(conn,sql);
 
     close();
@@ -185,7 +254,7 @@ bool Server::regist(int id,char *level)
 
 bool Server::deregist(int id)
 {
-    if(gateway_number!=1){
+    if(check_counter()==false){
         return false;
     }
 
@@ -197,8 +266,27 @@ bool Server::deregist(int id)
     sprintf (sql, "DELETE FROM `customer` WHERE `id`=%d",id);
     int res = mysql_query(conn,sql);
 
+    sprintf (sql, "DELETE FROM `log` WHERE `id`=%d",id);
+    res = mysql_query(conn,sql);
+
     close();
 
     return !res;
 }
 
+bool Server::gateway_regist(void)
+{
+    char sql[128]; 
+
+    init();
+    connect();
+
+
+    sprintf (sql, "INSERT INTO `gateway`(`ip`, `counter`) VALUES ('%s', false)", IP);
+    int res = mysql_query(conn,sql);
+
+    close();
+
+    return !res;
+  
+}

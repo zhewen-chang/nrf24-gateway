@@ -39,7 +39,9 @@ int main(int argc,char *argv[])
             bcm2835_gpio_set(20);
             
             radio.read(payload, 5); 
-            cout << payload << endl;
+            cout << "Got payload: " << payload;
+
+            radio.flush_rx();
 
             if(!strcmp((char*)payload,"RGS")){
                 radio.stopListening();
@@ -48,12 +50,14 @@ int main(int argc,char *argv[])
                 int id=data.getId();
                 char ids[10];
                 sprintf(ids,"%03d|%01d",id, id%6);
+
+                cout << ids;
                 
                 radio.write(ids,6);
 
                 //reg
-                if (!data.regist(id,"Low")) {
-                    cout<< "Reg failed" <<endl;
+                if (!data.regist(id)) {
+                    cout<< " Reg failed" <<endl;
                 }
                     
                 radio.startListening();
@@ -61,7 +65,7 @@ int main(int argc,char *argv[])
                 continue;
             }
 
-            int result=data.log((char *)payload, pipeNo);
+            int result=data.log((char *)payload);
             if(result==5){
                 char S[]="Sleep";
                 radio.stopListening();
@@ -75,7 +79,9 @@ int main(int argc,char *argv[])
                 radio.startListening();
             }
             else if (result==0)
-                cout<< "Log failed" <<endl;
+                cout<< " Log failed";
+
+            cout<<endl;
 
             bcm2835_gpio_clr(20);    
         }
