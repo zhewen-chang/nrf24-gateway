@@ -1,2 +1,2 @@
 #!/bin/bash 
-php /home/pi/RF24_gateway/alarm/setdiesdata.php
+php /home/pi/nrf24_gateway/alarm/setdiesdata.php
