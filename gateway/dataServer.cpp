@@ -62,11 +62,11 @@ bool Server::check_counter(void)
 {
     MYSQL_RES *res_ptr; 
     MYSQL_ROW result_row; 
+    bool result = false;
 
     char sql[128];
     sprintf(sql,"SELECT `counter` FROM `gateway` where ip='%s'",IP);
     int res = mysql_query(conn,sql);
-   
 
     if (!res) {
         res_ptr = mysql_store_result(conn);
@@ -75,16 +75,25 @@ bool Server::check_counter(void)
             int row = mysql_num_rows(res_ptr);
             if (row) {     
                 result_row = mysql_fetch_row(res_ptr);
-                return result_row[0];     
+                result = result_row[0];     
             } 
         } 
     }
-    return false;
-
+    
+    return result;
 }
 
 bool Server::log(int id, char *sign)
 {
+
+    if (!init()) {
+        return false;
+    }
+
+    if (!connect()) {
+        return false;
+    }
+
     char sql[256], times[100]; 
     time_t rawtime;
     struct tm *info;
@@ -93,15 +102,15 @@ bool Server::log(int id, char *sign)
     strftime(times, 100, "%Y-%m-%d %H:%M:%S", info);
     init();
     connect();
-    sprintf(sql, "INSERT ignore INTO `log`(`id`, `time`, `sign`, `near_gateway`) VALUES (%d, '%s', '%s', '%s')",id,times,sign,IP);
+    sprintf(sql, "INSERT INTO `log`(`id`, `time`, `sign`, `near_gateway`) VALUES (%d, '%s', '%s', '%s')",id,times,sign,IP);
     int res = mysql_query(conn,sql);
+
     if(check_counter()==false){
         sprintf(sql, "UPDATE `customer` SET `counter`=false WHERE id=%d",id);
         res = mysql_query(conn,sql);
-     }
+    }
 
     close();
-
 
     if (!res) {
         return true;
@@ -109,7 +118,8 @@ bool Server::log(int id, char *sign)
 
     return false;
 }
-/*analysis payload*/
+
+/*decode payload*/
 int Server::log(char *payload)
 {
     char *dp = strdup(payload);
@@ -208,9 +218,14 @@ int Server::getpipe(void)
     MYSQL_RES *res_ptr; 
     MYSQL_ROW result_row; 
 
-    init(); 
-    connect();
+    if (!init()) {
+        return -1;
+    }
 
+    if (!connect()) {
+        return -1;
+    }
+    
     char sql[] = "SELECT `id`, `pipe` FROM `customer` order by `id` desc";
     int res = mysql_query(conn,sql);
     int max = -1;
@@ -236,13 +251,19 @@ int Server::getpipe(void)
 
 bool Server::regist(int id)
 {
-   if(check_counter()==false){
-        return false;
-    }
     char sql[128]; 
 
-    init();
-    connect();
+    if (!init()) {
+        return false;
+    }
+
+    if (!connect()) {
+        return false;
+    }
+
+    if (check_counter()==false){
+        return false;
+    }
 
     sprintf (sql, "INSERT INTO `customer`(`id`, `pipe`) VALUES (%d, %d)", id,  id%6);
     int res = mysql_query(conn,sql);
@@ -254,14 +275,19 @@ bool Server::regist(int id)
 
 bool Server::deregist(int id)
 {
-    if(check_counter()==false){
+    char sql[128];
+
+    if (!init()) {
         return false;
     }
 
-    char sql[128];
+    if (!connect()) {
+        return false;
+    }
 
-    init(); 
-    connect();
+    if(check_counter()==false){
+        return false;
+    }
 
     sprintf (sql, "DELETE FROM `customer` WHERE `id`=%d",id);
     int res = mysql_query(conn,sql);
@@ -278,15 +304,19 @@ bool Server::gateway_regist(void)
 {
     char sql[128]; 
 
-    init();
-    connect();
+    if (!init()) {
+        return false;
+    }
 
+    if (!connect()) {
+        return false;
+    }
 
     sprintf (sql, "INSERT INTO `gateway`(`ip`, `counter`) VALUES ('%s', false)", IP);
+
     int res = mysql_query(conn,sql);
 
     close();
 
     return !res;
-  
 }

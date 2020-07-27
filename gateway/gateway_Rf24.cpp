@@ -37,9 +37,11 @@ int main(int argc,char *argv[])
         while(radio.available(&pipeNo)) {   
 
             bcm2835_gpio_set(20);
+
+            cout << "Got payload: ";
             
             radio.read(payload, 5); 
-            cout << "Got payload: " << payload;
+            cout << payload;
 
             radio.flush_rx();
 

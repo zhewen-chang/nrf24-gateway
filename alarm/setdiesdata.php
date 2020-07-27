@@ -17,7 +17,7 @@ function alarm()
 
 function isdie()
 {
-    $config = json_decode(file_get_contents("/home/pi/RF24_gateway/alarm/config.json"));
+    $config = json_decode(file_get_contents(dirname(__FILE__)."/config.json"));
     $mysqli=new mysqli($config->db_host, $config->db_name, $config->db_password, $config->db_table);
 
     $sql="SELECT id FROM customer WHERE 1 ";
@@ -27,33 +27,34 @@ function isdie()
     while($stmt->fetch()){
         $ids[]=$id;
     }
+    $stmt->close();
     foreach($ids as $id){
         $date = time();
 
-        $sql="SELECT `id`, `level`, `time`, `sign` FROM log WHERE id =? order by time desc";
+        $sql="SELECT a.level,b.sign,b.time,a.id  from customer as a left join log as b on a.id=b.id WHERE a.id=? order by b.time DESC limit 1";
         $stmt=$mysqli->prepare($sql);
         $stmt->bind_param('i',$id);
         $stmt->execute();
-        $stmt->bind_result($id,$level,$time,$sign);
+        $stmt->bind_result($level,$sign,$time,$id);
         $stmt->fetch();
         if($sign=='Alive')
         {
             $misstime=$date-strtotime($time);//string to int
-            if($level=='Low')
+            if($level=='LOW')
             {
                if($misstime>=30)
                {
                     alarm();
                }
             }
-            else if($level=='Mid')
+            else if($level=='MID')
             {
                 if($misstime>=50)
                 {
                     alarm();
                 }
             }
-            else if($level=='High')
+            else if($level=='HIGH')
             {
                 if($misstime>=70)
                 {
