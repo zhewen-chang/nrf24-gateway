@@ -61,11 +61,11 @@ int main(int argc,char *argv[])
                 if (!data.regist(id)) {
                     cout<< " Reg failed" <<endl;
                 }
-                    
+                
                 radio.startListening();
                 bcm2835_gpio_clr(20);    
                 continue;
-            }
+            } 
 
             int result=data.log((char *)payload);
             if(result==5){

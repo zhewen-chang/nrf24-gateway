@@ -60,6 +60,7 @@ void Server::getIP(void)
 
 bool Server::check_counter(void)
 {
+
     MYSQL_RES *res_ptr; 
     MYSQL_ROW result_row; 
     bool result = false;
@@ -86,7 +87,7 @@ bool Server::check_counter(void)
 bool Server::log(int id, char *sign)
 {
 
-    if (!init()) {
+    if(!init()) {
         return false;
     }
 
@@ -100,8 +101,8 @@ bool Server::log(int id, char *sign)
     time( &rawtime );
     info = localtime( &rawtime );
     strftime(times, 100, "%Y-%m-%d %H:%M:%S", info);
-    init();
-    connect();
+   /* init();
+    connect();*/
     sprintf(sql, "INSERT INTO `log`(`id`, `time`, `sign`, `near_gateway`) VALUES (%d, '%s', '%s', '%s')",id,times,sign,IP);
     int res = mysql_query(conn,sql);
 
