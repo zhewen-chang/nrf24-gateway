@@ -50,7 +50,7 @@ int main(int argc,char *argv[])
 
                 // getid
                 int id=data.getId();
-                char ids[10];
+                char ids[8];
                 sprintf(ids,"%03d|%01d",id, id%6);
 
                 cout << ids;

@@ -95,15 +95,9 @@ bool Server::log(int id, char *sign)
         return false;
     }
 
-    char sql[256], times[100]; 
-    time_t rawtime;
-    struct tm *info;
-    time( &rawtime );
-    info = localtime( &rawtime );
-    strftime(times, 100, "%Y-%m-%d %H:%M:%S", info);
-   /* init();
-    connect();*/
-    sprintf(sql, "INSERT INTO `log`(`id`, `time`, `sign`, `near_gateway`) VALUES (%d, '%s', '%s', '%s')",id,times,sign,IP);
+    char sql[256];
+
+    sprintf(sql, "INSERT ignore INTO `log`(`id`,`sign`, `near_gateway`) VALUES (%d, '%s', '%s')",id,sign,IP);
     int res = mysql_query(conn,sql);
 
     if(check_counter()==false){
